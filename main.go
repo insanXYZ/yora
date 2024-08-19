@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"yora/engine"
 )
 
 func main() {
@@ -12,7 +13,6 @@ func main() {
 		return
 	}
 
-	e := NewEngine(key)
+	e := engine.NewEngine(key)
 	e.Run()
-
 }
