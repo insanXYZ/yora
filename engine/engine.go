@@ -1,8 +1,13 @@
 package engine
 
 import (
+	"context"
+	"fmt"
+	"github.com/google/generative-ai-go/genai"
 	"github.com/rivo/tview"
+	"google.golang.org/api/option"
 	"yora/layout"
+	"yora/throw"
 )
 
 type ComponentLayout struct {
@@ -12,25 +17,50 @@ type ComponentLayout struct {
 
 type Engine struct {
 	ApiKey    string
-	Component *tview.Flex
+	Context   context.Context
+	Component *ComponentLayout
+	Model     *genai.GenerativeModel
 }
 
 func NewEngine(apiKey string) *Engine {
 	engine := &Engine{
-		ApiKey: apiKey,
+		ApiKey:  apiKey,
+		Context: context.Background(),
 	}
 
-	engine.Component = layout.BaseLayout(&layout.Base{
+	engine.Component = &ComponentLayout{
 		TextView:  engine.TextView(),
 		FormInput: engine.FormInput(),
-	})
+	}
+
+	err := engine.InitModel()
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil
+	}
 
 	return engine
 }
 
+func (e *Engine) InitModel() error {
+	client, err := genai.NewClient(e.Context, option.WithAPIKey(e.ApiKey))
+	if err != nil {
+		return throw.ClientGeminiKey()
+	}
+
+	model := client.GenerativeModel("gemini-1.5-flash")
+	e.Model = model
+	return nil
+}
+
 func (e *Engine) Run() {
 
-	err := tview.NewApplication().SetRoot(e.Component, true).SetFocus(e.Component).Run()
+	base := layout.BaseLayout(&layout.Base{
+		TextView:  e.Component.TextView,
+		FormInput: e.Component.FormInput,
+	})
+
+	err := tview.NewApplication().SetRoot(base, true).Run()
 	if err != nil {
 		panic(err.Error())
 	}
