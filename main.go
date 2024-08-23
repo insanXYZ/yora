@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+
 	key := os.Getenv("GEMINI_API_KEY")
 	if key == "" {
 		fmt.Println(throw.MissingKey())
@@ -15,4 +16,5 @@ func main() {
 	}
 	e := engine.NewEngine(key)
 	e.Run()
+
 }

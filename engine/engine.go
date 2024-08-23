@@ -10,27 +10,25 @@ import (
 	"yora/throw"
 )
 
-type ComponentLayout struct {
-	TextView  *tview.TextView
-	FormInput *tview.TextArea
-}
-
 type Engine struct {
-	ApiKey    string
 	Context   context.Context
-	Component *ComponentLayout
+	Component *layout.ComponentLayout
+	App       *tview.Application
 	Model     *genai.GenerativeModel
+	ApiKey    string
 }
 
 func NewEngine(apiKey string) *Engine {
 	engine := &Engine{
+		App:     tview.NewApplication(),
 		ApiKey:  apiKey,
 		Context: context.Background(),
 	}
 
-	engine.Component = &ComponentLayout{
-		TextView:  engine.TextView(),
+	engine.Component = &layout.ComponentLayout{
 		FormInput: engine.FormInput(),
+		TextView:  engine.TextView(),
+		Hint:      engine.Hint(),
 	}
 
 	err := engine.InitModel()
@@ -55,13 +53,20 @@ func (e *Engine) InitModel() error {
 
 func (e *Engine) Run() {
 
-	base := layout.BaseLayout(&layout.Base{
-		TextView:  e.Component.TextView,
-		FormInput: e.Component.FormInput,
-	})
+	base := layout.BaseLayout(e.Component)
 
-	err := tview.NewApplication().SetRoot(base, true).Run()
+	err := e.App.SetRoot(base, true).Run()
 	if err != nil {
 		panic(err.Error())
 	}
+}
+
+func (e *Engine) QueueUpdateDraw(f func()) {
+	go e.App.QueueUpdateDraw(f)
+}
+
+func (e *Engine) SetFocus(primitive tview.Primitive) {
+	e.QueueUpdateDraw(func() {
+		e.App.SetFocus(primitive)
+	})
 }
