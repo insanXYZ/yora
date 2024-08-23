@@ -3,12 +3,13 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/google/generative-ai-go/genai"
 	"github.com/rivo/tview"
 	"google.golang.org/api/iterator"
-	"net/http"
-	"time"
 )
 
 func (e *Engine) FormInput() *tview.TextArea {
@@ -27,14 +28,14 @@ func (e *Engine) setInputCaptureFormInput(t *tview.TextArea) {
 		switch event.Key() {
 		case tcell.KeyCtrlSpace:
 
-			if t.GetText() != "" && status == false {
+			if t.GetText() != "" && !status {
 
 				if _, err := http.Get("https://8.8.8.8"); err != nil {
 					t.SetText("no internet connection", false)
 					return event
 				}
 
-				message := fmt.Sprint("👤 [green]You:\n" + t.GetText() + "\n\n")
+				message := fmt.Sprint("👤 [green]You:\n[white]" + t.GetText() + "\n\n")
 
 				e.Component.TextView.Write([]byte(message))
 
@@ -45,7 +46,7 @@ func (e *Engine) setInputCaptureFormInput(t *tview.TextArea) {
 
 				go func() {
 					iter := e.Model.GenerateContentStream(e.Context, genai.Text(text))
-					e.Component.TextView.Write([]byte("🤖 [blue]Yora:\n"))
+					e.Component.TextView.Write([]byte("🤖 [blue]Yora:\n[white]"))
 					for {
 						resp, err := iter.Next()
 						if err != nil && errors.Is(err, iterator.Done) {
