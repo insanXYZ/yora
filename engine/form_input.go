@@ -1,15 +1,8 @@
 package engine
 
 import (
-	"errors"
-	"fmt"
-	"net/http"
-	"time"
-
 	"github.com/gdamore/tcell/v2"
-	"github.com/google/generative-ai-go/genai"
 	"github.com/rivo/tview"
-	"google.golang.org/api/iterator"
 )
 
 func (e *Engine) FormInput() *tview.TextArea {
@@ -18,70 +11,46 @@ func (e *Engine) FormInput() *tview.TextArea {
 	textarea.SetTitle("Message...")
 	textarea.SetTitleAlign(tview.AlignLeft)
 	e.setInputCaptureFormInput(textarea)
+
+	e.SetHub("forminput")
 	return textarea
 }
 
-func (e *Engine) setInputCaptureFormInput(t *tview.TextArea) {
-	status := false
+func (e *Engine) setInputCaptureFormInput(comp *tview.TextArea) {
+	sending := false
 
-	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	comp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyCtrlSpace:
+			message := comp.GetText()
 
-			if t.GetText() != "" && !status {
+			if message != "" && !sending {
 
-				if _, err := http.Get("https://8.8.8.8"); err != nil {
-					t.SetText("no internet connection", false)
+				if err := e.CheckConnection(); err != nil {
+					comp.SetText("no internet connection", false)
 					return event
 				}
 
-				message := fmt.Sprint("👤 [green]You:\n[white]" + t.GetText() + "\n\n")
+				e.SendToHub("textview", Hub{
+					Data:   message,
+					Status: SENDMESSAGE,
+				})
 
-				e.Component.TextView.Write([]byte(message))
-
-				status = true
-
-				text := t.GetText()
-				ch := make(chan bool)
-
-				go func() {
-					iter := e.Model.GenerateContentStream(e.Context, genai.Text(text))
-					e.Component.TextView.Write([]byte("🤖 [blue]Yora:\n[white]"))
-					for {
-						resp, err := iter.Next()
-						if err != nil && errors.Is(err, iterator.Done) {
-							break
-						}
-
-						s := fmt.Sprint(resp.Candidates[0].Content.Parts[0])
-
-						e.App.QueueUpdateDraw(func() {
-							e.Component.TextView.Write([]byte(s))
-							e.Component.TextView.ScrollToEnd()
-						})
-
-						time.Sleep(100 * time.Millisecond)
-					}
-					e.Component.TextView.Write([]byte("\n"))
-					ch <- true
-				}()
+				sending = true
 
 				go func() {
 					for {
 						select {
-						case <-ch:
-							close(ch)
-							e.App.QueueUpdateDraw(func() {
-								t.SetText("", false)
+						case <-e.Hub["forminput"]:
+							e.QueueUpdateDraw(func() {
+								comp.SetText("", false)
 							})
-							time.Sleep(100 * time.Millisecond)
-							status = false
+							sending = false
 							return
 						default:
-							e.App.QueueUpdateDraw(func() {
-								t.SetText("wait..", false)
+							e.QueueUpdateDraw(func() {
+								comp.SetText("wait..", false)
 							})
-							time.Sleep(100 * time.Millisecond)
 						}
 					}
 				}()
@@ -89,7 +58,7 @@ func (e *Engine) setInputCaptureFormInput(t *tview.TextArea) {
 			}
 		case tcell.KeyCtrlP:
 			e.SetFocus(e.Component.TextView)
-			t.SetText("", false)
+			comp.SetText("", false)
 		}
 		return event
 	})

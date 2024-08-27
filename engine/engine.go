@@ -3,26 +3,28 @@ package engine
 import (
 	"context"
 	"fmt"
-	"github.com/google/generative-ai-go/genai"
-	"github.com/rivo/tview"
-	"google.golang.org/api/option"
+	"net/http"
+	"time"
 	"yora/layout"
-	"yora/throw"
+	thirdparty "yora/third_party"
+
+	"github.com/rivo/tview"
 )
 
 type Engine struct {
 	Context   context.Context
 	Component *layout.ComponentLayout
 	App       *tview.Application
-	Model     *genai.GenerativeModel
-	ApiKey    string
+	Model     *thirdparty.GenaiAI
+	Hub       map[string]chan Hub
 }
 
 func NewEngine(apiKey string) *Engine {
+	ctx := context.Background()
+
 	engine := &Engine{
-		App:     tview.NewApplication(),
-		ApiKey:  apiKey,
-		Context: context.Background(),
+		App: tview.NewApplication(),
+		Hub: make(map[string]chan Hub),
 	}
 
 	engine.Component = &layout.ComponentLayout{
@@ -31,24 +33,15 @@ func NewEngine(apiKey string) *Engine {
 		Hint:      engine.Hint(),
 	}
 
-	err := engine.InitModel()
+	model, err := thirdparty.NewGenai(ctx, apiKey)
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil
 	}
 
+	engine.Model = model
+
 	return engine
-}
-
-func (e *Engine) InitModel() error {
-	client, err := genai.NewClient(e.Context, option.WithAPIKey(e.ApiKey))
-	if err != nil {
-		return throw.ClientGeminiKey()
-	}
-
-	model := client.GenerativeModel("gemini-1.5-flash")
-	e.Model = model
-	return nil
 }
 
 func (e *Engine) Run() {
@@ -61,12 +54,26 @@ func (e *Engine) Run() {
 	}
 }
 
+func (e *Engine) SetHub(key string) {
+	e.Hub[key] = make(chan Hub)
+}
+
+func (e *Engine) SendToHub(key string, payload Hub) {
+	e.Hub[key] <- payload
+}
+
+func (e *Engine) CheckConnection() (err error) {
+	_, err = http.Get("https://8.8.8.8")
+	return
+}
+
 func (e *Engine) QueueUpdateDraw(f func()) {
-	go e.App.QueueUpdateDraw(f)
+	e.App.QueueUpdateDraw(f)
 }
 
 func (e *Engine) SetFocus(primitive tview.Primitive) {
 	e.QueueUpdateDraw(func() {
 		e.App.SetFocus(primitive)
 	})
+	time.Sleep(100 * time.Millisecond)
 }

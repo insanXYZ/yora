@@ -13,7 +13,8 @@ func main() {
 	if key == "" {
 		fmt.Println(throw.MissingKey())
 		return
-	}
+  }
+
 	e := engine.NewEngine(key)
 	e.Run()
 
