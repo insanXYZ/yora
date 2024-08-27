@@ -3,6 +3,7 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"yora/color"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -16,6 +17,8 @@ func (e *Engine) TextView() *tview.TextView {
 	textView.SetBorder(true)
 	textView.SetRegions(true)
 	textView.SetWordWrap(true)
+	textView.SetBorderColor(color.RED)
+	textView.SetBackgroundColor(color.BLACK)
 	e.SetInputCaptureTextView(textView)
 	e.SetHub("textview")
 

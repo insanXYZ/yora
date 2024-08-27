@@ -1,15 +1,21 @@
 package engine
 
 import (
+	"yora/color"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
 func (e *Engine) FormInput() *tview.TextArea {
 	textarea := tview.NewTextArea()
-	textarea.SetBorder(true)
-	textarea.SetTitle("Message...")
 	textarea.SetTitleAlign(tview.AlignLeft)
+	textarea.SetBorder(true)
+	textarea.SetBackgroundColor(color.BLACK)
+	textarea.SetBorderColor(color.RED)
+	textarea.SetTitleColor(color.WHITE)
+
+	textarea.SetTitle(" Message... ")
 	e.setInputCaptureFormInput(textarea)
 
 	e.SetHub("forminput")
@@ -58,7 +64,6 @@ func (e *Engine) setInputCaptureFormInput(comp *tview.TextArea) {
 			}
 		case tcell.KeyCtrlP:
 			e.SetFocus(e.Component.TextView)
-			comp.SetText("", false)
 		}
 		return event
 	})

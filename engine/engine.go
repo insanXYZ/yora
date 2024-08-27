@@ -69,11 +69,11 @@ func (e *Engine) CheckConnection() (err error) {
 
 func (e *Engine) QueueUpdateDraw(f func()) {
 	e.App.QueueUpdateDraw(f)
+	time.Sleep(100 * time.Millisecond)
 }
 
 func (e *Engine) SetFocus(primitive tview.Primitive) {
-	e.QueueUpdateDraw(func() {
+	go e.QueueUpdateDraw(func() {
 		e.App.SetFocus(primitive)
 	})
-	time.Sleep(100 * time.Millisecond)
 }

@@ -1,6 +1,8 @@
 package layout
 
 import (
+	"yora/color"
+
 	"github.com/rivo/tview"
 )
 
@@ -16,5 +18,6 @@ func BaseLayout(b *ComponentLayout) *tview.Flex {
 	flex.AddItem(b.FormInput, 6, 1, true)
 	flex.AddItem(b.Hint, 1, 1, false)
 	flex.SetDirection(tview.FlexRow)
+	flex.SetBackgroundColor(color.BLACK)
 	return flex
 }
