@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
 	"yora/layout"
 	thirdparty "yora/third_party"
 
@@ -45,10 +46,9 @@ func NewEngine(apiKey string) *Engine {
 }
 
 func (e *Engine) Run() {
-
 	base := layout.BaseLayout(e.Component)
 
-	err := e.App.SetRoot(base, true).Run()
+	err := e.App.SetRoot(base, true).EnableMouse(true).Run()
 	if err != nil {
 		panic(err.Error())
 	}
